@@ -1,0 +1,56 @@
+name: Security & quality code scanning (ubuntu)
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get dependencies
+      run: sudo apt-get install -y libpulse-dev ninja-build libbsd-dev
+    - name: Get sources
+      uses: actions/checkout@v2
+    - name: Get FLTK
+      uses: actions/checkout@v2
+      with:
+        repository: fltk/fltk
+        path: fltk
+    - name: Get newt64
+      uses: actions/checkout@v2
+      with:
+        repository: MatthiasWM/NEWT64
+        path: newt64
+    - name: Compile FLTK
+      run: |
+        cmake -S fltk -B fltk/build \
+                      -D OPTION_USE_SYSTEM_LIBJPEG=Off \
+                      -D OPTION_USE_SYSTEM_ZLIB=Off \
+                      -D OPTION_USE_SYSTEM_LIBPNG=Off \
+                      -D FLTK_BUILD_TEST=Off \
+                      -D OPTION_USE_GL=Off
+        cmake --build fltk/build
+        sudo cmake --install fltk/build
+    - name: Compile newt64
+      run: |
+        cmake -S newt64 -B newt64/build
+        cmake --build newt64/build
+        sudo cmake --install newt64/build
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: cpp
+        config-file: ./.github/codeql/codeql-config.yml
+    - name: Compile Einstein
+      run: |
+        cmake -S . -B _Build_/Makefiles
+        cmake --build _Build_/Makefiles --target Einstein
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1

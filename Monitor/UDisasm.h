@@ -34,7 +34,7 @@ class TSymbolList;
 /// \author Paul Guyot <pguyot@kallisys.net>
 /// \version $Revision: 111 $
 ///
-/// \test	aucun test défini.
+/// \test	aucun test d√©fini.
 ///
 class UDisasm
 {
@@ -43,23 +43,23 @@ public:
 	/// Disassemble one line.
 	///
 	static void Disasm(
-					char* outString,
-					int inStringSize,
-					KUInt32 inAddr,
-					KUInt32 inInstruction,
-					TSymbolList* inSymbolList=0L );
-	
+		char* outString,
+		int inStringSize,
+		KUInt32 inAddr,
+		KUInt32 inInstruction,
+		TSymbolList* inSymbolList = 0L);
+
 	///
 	/// make symbol list access easy
 	///
 	static void setSymbolList(TSymbolList*);
-	
+
 private:
-	static TSymbolList *pSymbolList;
+	static TSymbolList* pSymbolList;
 };
 
 #endif
-		// _UDISASM_H
+// _UDISASM_H
 
 // ============================================================================ //
 // Windows Airlines:                                                            //

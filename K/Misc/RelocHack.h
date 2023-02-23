@@ -2,7 +2,7 @@
 // Fichier:			RelocHack.h
 // Projet:			K
 //
-// Créé le:			26/06/2001
+// Cr√©√© le:			26/06/2001
 // Tabulation:		4 espaces
 //
 // ***** BEGIN LICENSE BLOCK *****
@@ -34,8 +34,11 @@
 #define __RELOCHACK__
 
 #ifndef __NEWTON_H
-	#include <Newton.h>
+#include <Newton.h>
 #endif
+
+typedef void (*VTableFuncPtr)(void);
+typedef void (*funcPtr)(void);
 
 // ----------------	//
 // RelocVTableHack	//
@@ -50,20 +53,18 @@
 
 // Prototype for the function:
 
-typedef void (*VTableFuncPtr)( void );
-
 // Umm. This is what I would like to code:
 // typedef void (*RelocVTableHackFuncPtr)( ULong, RelocVTableHackFuncPtr, VTableFuncPtr );
 // extern void RelocVTableHack( ULong inObject, RelocVTableHackFuncPtr inRelocVTableHackPtr, VTableFuncPtr inVTablePtr );
 
-extern void RelocVTableHack( ULong inObject, ULong inRelocVTableHackPtr, VTableFuncPtr inVTablePtr );
+extern "C" void RelocVTableHack(void* inObject, funcPtr inRelocVTableHackPtr, VTableFuncPtr inVTablePtr);
 
 // You can use this template for your convenience (this way you're sure that the parameters will be passed in the correct order)
-#define RelocVTable( inVTablePtr )	RelocVTableHack( (ULong) this, (ULong) &RelocVTableHack, inVTablePtr )
+#define RelocVTable(inVTablePtr) RelocVTableHack((void*) this, (funcPtr) &RelocVTableHack, inVTablePtr)
 
 #else
 
-#define RelocVTable( inVTablePtr )
+#define RelocVTable(inVTablePtr)
 #endif
 
 // ----------------	//
@@ -73,14 +74,13 @@ extern void RelocVTableHack( ULong inObject, ULong inRelocVTableHackPtr, VTableF
 // This is another hack, although less dirty :)
 // It works like the previous one and is useful if you need to pass a function pointer to the copy of the function.
 
-extern ULong RelocFuncPtrHack( ULong inRelocFuncPtrHack, ULong inFuncPtr );
+extern "C" funcPtr RelocFuncPtrHack(funcPtr inRelocFuncPtrHack, funcPtr inFuncPtr);
 
 // You can use a template in this case, too (beware, you'll have to cast the result to a func pointer)
-
-#define RelocFuncPtr( inFuncPtr )	RelocFuncPtrHack( (ULong) &RelocFuncPtrHack, (ULong) inFuncPtr )
+#define RelocFuncPtr(inFuncPtr) RelocFuncPtrHack((funcPtr) &RelocFuncPtrHack, (funcPtr) inFuncPtr)
 
 #endif
-		// __RELOCHACK__
+// __RELOCHACK__
 
 // ====================================================================== //
 // Thus spake the master programmer:                                      //
