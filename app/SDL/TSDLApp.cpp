@@ -79,6 +79,7 @@
 #include "Emulator/Screen/TSDLScreenManager.h"
 #include "Emulator/Serial/TSerialPorts.h"
 #include "Emulator/Sound/TNullSoundManager.h"
+#include "app/SDL/TSDLSoundManager.h"
 
 #if TARGET_OS_ANDROID
 #include "app/SDL/TSDLAndroid.h"
@@ -626,7 +627,7 @@ SDL_AppResult TSDLApp::Run()
 										   mScreenHeight
 										   );
 
-	mSoundManager = new TNullSoundManager(mLog);
+	mSoundManager = new TSDLSoundManager(mLog);
 
 	mNetworkManager = new TNullNetworkManager(mLog);
 
