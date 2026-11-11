@@ -561,6 +561,13 @@ SDL_AppResult TSDLApp::HandleBootStateChange()
 		}
 			mROMImage = new TFlatROMImageWithREX(mROMPath.string().c_str(), nullptr);
 			mLog->FLogLine("ROM image error code: %d", (int)mROMImage->GetErrorCode());
+			{
+				static const char* kROMNames[] = { "MessagePad 2x00 US (717006)", "MessagePad 2x00 German",
+												   "eMate 300", "MessagePad 2100 French (Watson)" };
+				KSInt32 id = mROMImage->GetROMId();
+				mLog->FLogLine("ROM is %s, checksum %s", (id >= 0 && id < 4) ? kROMNames[id] : "UNKNOWN",
+							   mROMImage->CRCValid() ? "matches" : "DOES NOT MATCH a known dump");
+			}
 			if (mROMImage->GetErrorCode() == TAIFROMImageWithREXes::kNoError) {
 				ChangeBootState(BootState::Run);
 			} else {
