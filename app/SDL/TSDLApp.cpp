@@ -453,6 +453,15 @@ SDL_AppResult TSDLApp::HandleSDLEvent(SDL_Event *event)
 			RedrawAll();
 			break;
 
+		case SDL_EVENT_WILL_ENTER_BACKGROUND:
+		case SDL_EVENT_DID_ENTER_BACKGROUND:
+		case SDL_EVENT_TERMINATING:
+			// Android may kill a background app without warning. Put the
+			// Newton to sleep now, so NewtonOS saves what it keeps in memory
+			// and the flash is not left in the middle of a write.
+			SleepNewton();
+			break;
+
 		case SDL_EVENT_DID_ENTER_FOREGROUND:
 			// Back from the background: the Newton may have gone to sleep
 			// meanwhile, and there is no power button yet. Wake it up.
@@ -717,6 +726,17 @@ SDL_AppResult TSDLApp::IterateSDL()
 	if (now-prev_call < 14) return SDL_APP_CONTINUE; // 1/60th = 16.66
 	prev_call = now;
 
+	// A sleep that was still on its way when we came back: wake again.
+	if (mWakeUntil) {
+		if (now > mWakeUntil) {
+			mWakeUntil = 0;
+		} else if (mPlatformManager && !mPlatformManager->IsPowerOn()) {
+			mWakeUntil = 0;
+			WakeNewton();
+			RedrawAll();
+		}
+	}
+
 	if (mSDLTexture && mScreenManager) {
 		bool changed = mScreenManager->UpdateTexture(mSDLTexture, mTextureEncoding, mToolbarHeight);
 		if (mRefreshToolbar) changed |= RedrawToolbar();
@@ -832,8 +852,24 @@ void TSDLApp::RedrawAll()
  */
 void TSDLApp::WakeNewton()
 {
+	if (mSleepRequested) mWakeUntil = SDL_GetTicks() + 5000;
+	mSleepRequested = false;
 	if (mPlatformManager && !mPlatformManager->IsPowerOn()) {
 		mLog->FLogLine("Waking the Newton");
+		mPlatformManager->SendPowerSwitchEvent();
+	}
+}
+
+/**
+ \brief Press the Newton's power switch once if the Newton is awake.
+ */
+void TSDLApp::SleepNewton()
+{
+	if (mSleepRequested) return; // the switch was pressed already
+	if (mBootState != BootState::Running) return;
+	if (mPlatformManager && mPlatformManager->IsPowerOn()) {
+		mLog->FLogLine("Putting the Newton to sleep");
+		mSleepRequested = true;
 		mPlatformManager->SendPowerSwitchEvent();
 	}
 }
