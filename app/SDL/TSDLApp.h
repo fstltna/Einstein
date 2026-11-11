@@ -34,6 +34,7 @@
 
 #include <string>
 #include <filesystem>
+#include <atomic>
 #include <vector>
 
 
@@ -131,6 +132,9 @@ public:
 	void RedrawAll();
 	void WakeNewton();
 
+	// Draw recent log lines and the emulator state over the screen.
+	void DrawLogOverlay();
+
 	// --- User Actions
 
 	// user wants to install a package
@@ -212,6 +216,11 @@ private:
 	int mPenDownN { 0 };
 	int mPenMoveN { -1 };
 	int mPenDown { 0 }; // 0: up, 1: on screen, 2: on buttons
+	// Diagnostics: show the log until NewtonOS draws; a tap on the left
+	// part of the toolbar shows or hides it.
+	bool mShowLog { true };
+	bool mLogToggled { false };
+	std::atomic<int> mEmulatorState { 0 }; // 0 not started, 1 running, 2 ended
 };
 
 #endif

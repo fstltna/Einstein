@@ -30,6 +30,7 @@
 #include <SDL3/SDL.h>
 
 #include <mutex>
+#include <atomic>
 
 // Set to 0 to use SDL_UpdateTexture
 // Set to 1 to use SDL_Lock/Unlock_Texture
@@ -155,6 +156,9 @@ public:
 		mIsDirty = true;
 		dirty_rect_mutex.unlock();
 	}
+
+	/// Number of screen updates from NewtonOS, for the diagnostics overlay.
+	std::atomic<unsigned> mNewtonUpdates { 0 };
 
 	std::mutex dirty_rect_mutex;
 	SDL_Rect mDirtyRect { };
