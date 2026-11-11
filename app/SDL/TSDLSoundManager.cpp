@@ -33,9 +33,9 @@ namespace {
 	// phone is not always quick enough to refill a single buffer in time,
 	// and long sounds stuttered.
 	constexpr int kQueueLowWater = 3;
-	// Silence queued before a sound that starts from an empty queue (30 ms),
-	// so the first refill has time to arrive.
-	constexpr int kPrerollFrames = kNewtonSampleRate * 30 / 1000;
+	// Silence queued before a sound that starts from an empty queue (80 ms),
+	// so a slow refill during a screen animation does not leave a gap.
+	constexpr int kPrerollFrames = kNewtonSampleRate * 80 / 1000;
 }
 
 TSDLSoundManager::TSDLSoundManager(TLog* inLog) :
@@ -114,6 +114,12 @@ TSDLSoundManager::ScheduleOutput(const KUInt8* inBuffer, KUInt32 inSize)
 		mHostBuffer[i] = (KSInt16) be;
 	}
 	SDL_PutAudioStreamData(mStream, mHostBuffer, (int) (frames * sizeof(KSInt16)));
+	// Still short? Ask for the next buffer now instead of waiting for the
+	// device callback, which can be tens of milliseconds away.
+	if (SDL_GetAudioStreamQueued(mStream) < (int) (kQueueLowWater * kNewtonBufferSize))
+	{
+		RequestOutputInterrupt();
+	}
 }
 
 void
