@@ -127,6 +127,10 @@ public:
 	// Redraw the toolbar into the texture.
 	bool RedrawToolbar();
 
+	// Redraw everything, and wake the Newton if it is asleep.
+	void RedrawAll();
+	void WakeNewton();
+
 	// --- User Actions
 
 	// user wants to install a package

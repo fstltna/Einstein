@@ -143,6 +143,19 @@ public:
 	///
 	bool UpdateTexture(SDL_Texture *texture, int encoding, int toolbar_height);
 
+	///
+	/// Mark the whole Newton screen as changed, so the next UpdateTexture()
+	/// copies all of it (after the app returns from the background, or when
+	/// the GPU lost the texture contents).
+	///
+	void InvalidateAll()
+	{
+		dirty_rect_mutex.lock();
+		mDirtyRect = { 0, 0, static_cast<int>(GetScreenWidth()), static_cast<int>(GetScreenHeight()) };
+		mIsDirty = true;
+		dirty_rect_mutex.unlock();
+	}
+
 	std::mutex dirty_rect_mutex;
 	SDL_Rect mDirtyRect { };
 	bool mIsDirty { false };

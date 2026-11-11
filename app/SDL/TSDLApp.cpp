@@ -442,7 +442,20 @@ SDL_AppResult TSDLApp::HandleSDLEvent(SDL_Event *event)
 			return SDL_APP_SUCCESS;
 
 		case SDL_EVENT_WINDOW_EXPOSED:
-			RefreshScreen();
+		case SDL_EVENT_WINDOW_RESIZED:
+		case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+		case SDL_EVENT_RENDER_TARGETS_RESET:
+		case SDL_EVENT_RENDER_DEVICE_RESET:
+			// The window surface may be new (Android recreates it after the
+			// app was in the background): draw everything again.
+			RedrawAll();
+			break;
+
+		case SDL_EVENT_DID_ENTER_FOREGROUND:
+			// Back from the background: the Newton may have gone to sleep
+			// meanwhile, and there is no power button yet. Wake it up.
+			WakeNewton();
+			RedrawAll();
 			break;
 
 		case SDL_EVENT_KEY_DOWN:  /* quit if user hits ESC key */
@@ -477,6 +490,12 @@ SDL_AppResult TSDLApp::HandleSDLEvent(SDL_Event *event)
 				if (e->button == SDL_BUTTON_LEFT) {
 					int mx = e->x * mScreenScaleX;
 					int my = e->y * mScreenScaleY - mToolbarHeight;
+					if (mPlatformManager && !mPlatformManager->IsPowerOn()) {
+						// A tap wakes a sleeping Newton, like its power switch.
+						WakeNewton();
+						RedrawAll();
+						break;
+					}
 					if (my >= 0) {
 						mPenDown = 1;
 						scrn->PenDown(std::clamp(mx, 0, mScreenWidth-1),
@@ -627,7 +646,7 @@ SDL_AppResult TSDLApp::Run()
 										   mScreenHeight
 										   );
 
-	mSoundManager = new TNullSoundManager(mLog); // TEST: sound off to isolate the black screen
+	mSoundManager = new TSDLSoundManager(mLog);
 
 	mNetworkManager = new TNullNetworkManager(mLog);
 
@@ -699,6 +718,27 @@ SDL_AppResult TSDLApp::IterateSDL()
 	}
 
 	return SDL_APP_CONTINUE;
+}
+
+/**
+ \brief Draw the whole screen and the toolbar again at the next frame.
+ */
+void TSDLApp::RedrawAll()
+{
+	if (mScreenManager) mScreenManager->InvalidateAll();
+	mRefreshToolbar = true;
+	mRefreshScreen = true;
+}
+
+/**
+ \brief Press the Newton's power switch if the Newton is asleep.
+ */
+void TSDLApp::WakeNewton()
+{
+	if (mPlatformManager && !mPlatformManager->IsPowerOn()) {
+		mLog->FLogLine("Waking the Newton");
+		mPlatformManager->SendPowerSwitchEvent();
+	}
 }
 
 /**
