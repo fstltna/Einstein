@@ -216,9 +216,9 @@ private:
 	int mPenDownN { 0 };
 	int mPenMoveN { -1 };
 	int mPenDown { 0 }; // 0: up, 1: on screen, 2: on buttons
-	// Diagnostics: show the log until NewtonOS draws; a tap on the left
-	// part of the toolbar shows or hides it.
-	bool mShowLog { true };
+	// Diagnostics: the log is hidden by default; a tap on the left part of
+	// the toolbar shows or hides it.
+	bool mShowLog { false };
 	bool mLogToggled { false };
 	std::atomic<int> mEmulatorState { 0 }; // 0 not started, 1 running, 2 ended
 };
