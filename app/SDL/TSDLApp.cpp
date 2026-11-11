@@ -627,7 +627,7 @@ SDL_AppResult TSDLApp::Run()
 										   mScreenHeight
 										   );
 
-	mSoundManager = new TSDLSoundManager(mLog);
+	mSoundManager = new TNullSoundManager(mLog); // TEST: sound off to isolate the black screen
 
 	mNetworkManager = new TNullNetworkManager(mLog);
 
