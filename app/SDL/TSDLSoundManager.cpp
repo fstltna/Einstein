@@ -29,6 +29,13 @@
 
 namespace {
 	constexpr int kNewtonSampleRate = 22050;
+	// Keep about three Newton buffers (250 ms) queued: the emulator on a
+	// phone is not always quick enough to refill a single buffer in time,
+	// and long sounds stuttered.
+	constexpr int kQueueLowWater = 3;
+	// Silence queued before a sound that starts from an empty queue (30 ms),
+	// so the first refill has time to arrive.
+	constexpr int kPrerollFrames = kNewtonSampleRate * 30 / 1000;
 }
 
 TSDLSoundManager::TSDLSoundManager(TLog* inLog) :
@@ -121,6 +128,11 @@ TSDLSoundManager::StartOutput()
 	}
 	mOutputRequestPending = false;
 	mOutputIsRunning = true;
+	if (mStream && SDL_GetAudioStreamQueued(mStream) == 0)
+	{
+		static const KSInt16 sSilence[kPrerollFrames] = { };
+		SDL_PutAudioStreamData(mStream, sSilence, (int) sizeof(sSilence));
+	}
 	if (mStream && !mDeviceRunning)
 	{
 		if (SDL_ResumeAudioStreamDevice(mStream))
@@ -180,7 +192,7 @@ void
 TSDLSoundManager::FeedDevice(SDL_AudioStream* inStream)
 {
 	// Called on SDL's audio thread whenever the device wants data.
-	if (SDL_GetAudioStreamQueued(inStream) < (int) kNewtonBufferSize)
+	if (SDL_GetAudioStreamQueued(inStream) < (int) (kQueueLowWater * kNewtonBufferSize))
 	{
 		RequestOutputInterrupt();
 	}
