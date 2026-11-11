@@ -768,12 +768,22 @@ void TSDLApp::DrawLogOverlay()
 	unsigned pc = 0;
 	if (mEmulator && mEmulator->GetProcessor())
 		pc = (unsigned)mEmulator->GetProcessor()->GetRegister(15);
-	snprintf(header, sizeof(header), "Einstein log - boot %d, emulator %s, power %s, updates %u, pc %08X",
-			 (int)mBootState, kThread[mEmulatorState.load() % 3],
+	snprintf(header, sizeof(header), "emulator %s, power %s, updates %u",
+			 kThread[mEmulatorState.load() % 3],
 			 mPlatformManager ? (mPlatformManager->IsPowerOn() ? "on" : "off") : "-",
-			 mScreenManager ? mScreenManager->mNewtonUpdates.load() : 0u, pc);
+			 mScreenManager ? mScreenManager->mNewtonUpdates.load() : 0u);
 	lines.emplace_back(header);
-	lines.emplace_back("(tap the left of the toolbar to hide)");
+	// The PC now and four earlier samples, about half a second apart.
+	static unsigned pcHistory[4] = { };
+	static Uint64 lastSample = 0;
+	if (SDL_GetTicks() - lastSample > 500) {
+		lastSample = SDL_GetTicks();
+		for (int i = 3; i > 0; --i) pcHistory[i] = pcHistory[i-1];
+		pcHistory[0] = pc;
+	}
+	snprintf(header, sizeof(header), "screen %dx%d, pc %08X %08X %08X %08X",
+			 mScreenWidth, mScreenHeight, pcHistory[0], pcHistory[1], pcHistory[2], pcHistory[3]);
+	lines.emplace_back(header);
 	for (auto& line : TSDLLog::RecentLines(rows)) {
 		// wrap long lines
 		for (size_t i = 0; i < line.size(); i += cols)

@@ -209,8 +209,8 @@ private:
 	SDL_Texture *mSDLTexture { nullptr };
 	int mTextureEncoding { 0 };
 	Uint32 mToolbarColor { 0 };
-	bool mAdjustToScreenDPI { true };
-	bool mAdjustToAspectRatio { true };
+	bool mAdjustToScreenDPI { false }; // TEST: keep the MessagePad's 320 x 480
+	bool mAdjustToAspectRatio { false }; // TEST: keep the MessagePad's 320 x 480
 	bool mRefreshToolbar { true };
 	bool mRefreshScreen { true };
 	int mPenDownN { 0 };
