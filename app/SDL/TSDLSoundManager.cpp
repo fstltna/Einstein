@@ -53,6 +53,11 @@ TSDLSoundManager::TSDLSoundManager(TLog* inLog) :
 		return;
 	}
 	OutputVolumeChanged();
+	if (GetLog())
+	{
+		GetLog()->FLogLine("Sound: SDL audio device '%s' opened",
+			SDL_GetAudioDeviceName(SDL_GetAudioStreamDevice(mStream)));
+	}
 }
 
 TSDLSoundManager::~TSDLSoundManager()
@@ -79,6 +84,13 @@ TSDLSoundManager::ScheduleOutput(const KUInt8* inBuffer, KUInt32 inSize)
 		return;
 	}
 	mOutputRequestPending = false;
+	static int sLogCount = 0;
+	if (GetLog() && sLogCount < 3)
+	{
+		sLogCount++;
+		GetLog()->FLogLine("Sound: %u bytes from NewtonOS%s", (unsigned) inSize,
+			OutputVolume() == kOutputVolume_Zero ? " (volume is zero, dropped)" : "");
+	}
 	if (!mStream || OutputVolume() == kOutputVolume_Zero)
 	{
 		return;
@@ -100,6 +112,13 @@ TSDLSoundManager::ScheduleOutput(const KUInt8* inBuffer, KUInt32 inSize)
 void
 TSDLSoundManager::StartOutput()
 {
+	static int sLogCount = 0;
+	if (GetLog() && sLogCount < 5)
+	{
+		sLogCount++;
+		GetLog()->FLogLine("Sound: start, volume %.2f, queued %d bytes", OutputVolumeNormalized(),
+			mStream ? SDL_GetAudioStreamQueued(mStream) : -1);
+	}
 	mOutputRequestPending = false;
 	mOutputIsRunning = true;
 	if (mStream && !mDeviceRunning)

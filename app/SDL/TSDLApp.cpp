@@ -673,7 +673,7 @@ SDL_AppResult TSDLApp::Run()
 										   mScreenHeight
 										   );
 
-	mSoundManager = new TNullSoundManager(mLog); // TEST: sound off, to confirm the boot hang (builds 4-8)
+	mSoundManager = new TSDLSoundManager(mLog);
 
 	mNetworkManager = new TNullNetworkManager(mLog);
 
