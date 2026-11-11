@@ -71,6 +71,7 @@
 #include "TSDLApp.h"
 
 #include "Emulator/TEmulator.h"
+#include "Emulator/TARMProcessor.h"
 #include "Emulator/Log/TSDLLog.h"
 #include "Emulator/Network/TNetworkManager.h"
 #include "Emulator/Platform/TPlatformManager.h"
@@ -665,7 +666,7 @@ SDL_AppResult TSDLApp::Run()
 										   mScreenHeight
 										   );
 
-	mSoundManager = new TSDLSoundManager(mLog);
+	mSoundManager = new TNullSoundManager(mLog); // TEST: sound off, to confirm the boot hang (builds 4-8)
 
 	mNetworkManager = new TNullNetworkManager(mLog);
 
@@ -764,10 +765,13 @@ void TSDLApp::DrawLogOverlay()
 	std::vector<std::string> lines;
 	char header[160];
 	static const char* kThread[] = { "not started", "running", "ENDED" };
-	snprintf(header, sizeof(header), "Einstein log - boot %d, emulator %s, power %s, updates %u",
+	unsigned pc = 0;
+	if (mEmulator && mEmulator->GetProcessor())
+		pc = (unsigned)mEmulator->GetProcessor()->GetRegister(15);
+	snprintf(header, sizeof(header), "Einstein log - boot %d, emulator %s, power %s, updates %u, pc %08X",
 			 (int)mBootState, kThread[mEmulatorState.load() % 3],
 			 mPlatformManager ? (mPlatformManager->IsPowerOn() ? "on" : "off") : "-",
-			 mScreenManager ? mScreenManager->mNewtonUpdates.load() : 0u);
+			 mScreenManager ? mScreenManager->mNewtonUpdates.load() : 0u, pc);
 	lines.emplace_back(header);
 	lines.emplace_back("(tap the left of the toolbar to hide)");
 	for (auto& line : TSDLLog::RecentLines(rows)) {
