@@ -68,7 +68,18 @@ TSDLSoundManager::~TSDLSoundManager()
 void
 TSDLSoundManager::ScheduleOutput(const KUInt8* inBuffer, KUInt32 inSize)
 {
-	if (!mStream || inSize == 0 || OutputVolume() == kOutputVolume_Zero)
+	if (inSize == 0)
+	{
+		// NewtonOS has no more data: the sound is over.
+		mOutputRequestPending = false;
+		if (mOutputIsRunning)
+		{
+			StopOutput();
+		}
+		return;
+	}
+	mOutputRequestPending = false;
+	if (!mStream || OutputVolume() == kOutputVolume_Zero)
 	{
 		return;
 	}
@@ -89,6 +100,7 @@ TSDLSoundManager::ScheduleOutput(const KUInt8* inBuffer, KUInt32 inSize)
 void
 TSDLSoundManager::StartOutput()
 {
+	mOutputRequestPending = false;
 	mOutputIsRunning = true;
 	if (mStream && !mDeviceRunning)
 	{
@@ -100,21 +112,23 @@ TSDLSoundManager::StartOutput()
 			GetLog()->FLogLine("SDL_ResumeAudioStreamDevice failed: %s", SDL_GetError());
 		}
 	}
+	// Ask for the first buffer right away.
+	RequestOutputInterrupt();
 }
 
 void
 TSDLSoundManager::StopOutput()
 {
-	// Let the queued samples play out; the callback stops asking for more.
-	// The device keeps running (playing silence) until the next start,
-	// so the end of a sound is not cut off.
+	// The queued samples play out. The device keeps running (playing
+	// silence) until the next start, so the end of a sound is not cut off.
 	mOutputIsRunning = false;
+	mOutputRequestPending = false;
 }
 
 Boolean
 TSDLSoundManager::OutputIsRunning()
 {
-	return mStream && SDL_GetAudioStreamQueued(mStream) > 0;
+	return mOutputIsRunning;
 }
 
 void
@@ -123,6 +137,16 @@ TSDLSoundManager::OutputVolumeChanged()
 	if (mStream)
 	{
 		SDL_SetAudioStreamGain(mStream, OutputVolumeNormalized());
+	}
+}
+
+void
+TSDLSoundManager::RequestOutputInterrupt()
+{
+	bool expected = false;
+	if (mOutputIsRunning && mOutputRequestPending.compare_exchange_strong(expected, true))
+	{
+		RaiseOutputInterrupt();
 	}
 }
 
@@ -137,8 +161,8 @@ void
 TSDLSoundManager::FeedDevice(SDL_AudioStream* inStream)
 {
 	// Called on SDL's audio thread whenever the device wants data.
-	if (mOutputIsRunning && SDL_GetAudioStreamQueued(inStream) < (int) kNewtonBufferSize)
+	if (SDL_GetAudioStreamQueued(inStream) < (int) kNewtonBufferSize)
 	{
-		RaiseOutputInterrupt();
+		RequestOutputInterrupt();
 	}
 }

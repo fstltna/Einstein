@@ -36,7 +36,8 @@
 /// 22050 Hz. They are converted to the host byte order and queued on an
 /// SDL audio stream; SDL converts them to whatever the device needs.
 /// When less than one Newton buffer is left in the queue, the output
-/// interrupt asks NewtonOS for more.
+/// interrupt asks NewtonOS for more, one request at a time (like the
+/// PulseAudio manager). An empty buffer from NewtonOS ends the output.
 ///
 class TSDLSoundManager : public TBufferedSoundManager
 {
@@ -54,11 +55,14 @@ private:
 	static void SDLCALL AudioCallback(void* inUserData, SDL_AudioStream* inStream,
 		int inAdditionalAmount, int inTotalAmount);
 	void FeedDevice(SDL_AudioStream* inStream);
+	void RequestOutputInterrupt();
 
 	SDL_AudioStream* mStream { nullptr };
 	KSInt16* mHostBuffer { nullptr };
 	std::atomic<bool> mOutputIsRunning { false };
 	std::atomic<bool> mDeviceRunning { false };
+	/// One request for more data at a time, cleared when data arrives.
+	std::atomic<bool> mOutputRequestPending { false };
 };
 
 #endif
