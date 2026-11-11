@@ -28,6 +28,16 @@ android {
         }
     }
 
+    // A fixed debug key, so new test builds install over older ones.
+    // It is public on purpose: never use it for a release build.
+    signingConfigs {
+        debug {
+            storeFile rootProject.file('einstein-debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
