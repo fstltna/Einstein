@@ -38,6 +38,7 @@ Installing NDK (Side by side) 27.0.12077973 in /usr/local/lib/android/sdk/ndk/27
 > Task :app:processDebugMainManifest
 > Task :app:processDebugManifest
 > Task :app:mergeDebugShaders
+> Task :app:processDebugManifestForPackage
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
 > Task :app:mergeDebugAssets
@@ -45,9 +46,12 @@ Installing NDK (Side by side) 27.0.12077973 in /usr/local/lib/android/sdk/ndk/27
 > Task :app:processDebugJavaRes NO-SOURCE
 > Task :app:checkDebugDuplicateClasses
 > Task :app:mergeDebugJavaResource
-> Task :app:processDebugManifestForPackage
-> Task :app:mergeLibDexDebug
 > Task :app:processDebugResources
+> Task :app:compileDebugJavaWithJavac
+> Task :app:mergeLibDexDebug
+> Task :app:dexBuilderDebug
+> Task :app:mergeProjectDexDebug
+> Task :app:desugarDebugFileDependencies
 
 > Task :app:configureCMakeDebug[arm64-v8a]
 Checking the license for package CMake 3.22.1 in /usr/local/lib/android/sdk/licenses
@@ -58,11 +62,7 @@ Installing CMake 3.22.1 in /usr/local/lib/android/sdk/cmake/3.22.1
 "Install CMake 3.22.1 v.3.22.1" complete.
 "Install CMake 3.22.1 v.3.22.1" finished.
 
-> Task :app:desugarDebugFileDependencies
-> Task :app:compileDebugJavaWithJavac
 > Task :app:mergeExtDexDebug
-> Task :app:dexBuilderDebug
-> Task :app:mergeProjectDexDebug
 > Task :app:buildCMakeDebug[arm64-v8a]
 > Task :app:mergeDebugJniLibFolders
 > Task :app:validateSigningDebug
@@ -82,5 +82,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.13/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD SUCCESSFUL in 2m
+BUILD SUCCESSFUL in 1m 52s
 35 actionable tasks: 35 executed
