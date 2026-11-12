@@ -1,0 +1,75 @@
+name: Android APK releases (fork)
+
+on:
+  push:
+    branches: [ android ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  SDL_VERSION: 3.2.16
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Download prebuilt SDL3 for Android
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh -R libsdl-org/SDL release download "release-${SDL_VERSION}" \
+            -p "SDL3-devel-${SDL_VERSION}-android.zip" -D /tmp
+          unzip -o -j "/tmp/SDL3-devel-${SDL_VERSION}-android.zip" '*.aar' -d android-project/app/libs
+          ls -l android-project/app/libs
+
+      - name: Build APK (arm64)
+        working-directory: android-project
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace assembleDebug -PeinsteinAbis=arm64-v8a 2>&1 | tee "$GITHUB_WORKSPACE/android-build.log"
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Einstein-android-arm64
+          path: android-project/app/build/outputs/apk/debug/*.apk
+
+      - name: Publish APK as a pre-release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Continue the numbering of the old workflow (builds 1-22).
+          NUM=$((GITHUB_RUN_NUMBER + 22))
+          TAG="android-build-${NUM}"
+          cp android-project/app/build/outputs/apk/debug/app-debug.apk "Einstein-${TAG}.apk"
+          gh release create "$TAG" "Einstein-${TAG}.apk" --prerelease --target "$GITHUB_SHA" \
+            --title "Einstein Android build ${NUM}" \
+            --notes "Debug APK for arm64 Android devices, built from ${GITHUB_SHA}."
+
+      # Save the build log to the ci-logs branch so it can be read with plain git.
+      - name: Save build log
+        if: always()
+        run: |
+          cp android-build.log /tmp/android-build.log 2>/dev/null || echo "No build log produced" > /tmp/android-build.log
+          echo "Result: ${{ job.status }}  Run: ${GITHUB_RUN_NUMBER}  Commit: ${GITHUB_SHA}" > /tmp/status.txt
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          rm -f android-build.log
+          git fetch origin ci-logs:refs/remotes/origin/ci-logs && git checkout -f -B ci-logs origin/ci-logs || git checkout -f --orphan ci-logs
+          git rm -rf --cached . >/dev/null 2>&1 || true
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp /tmp/android-build.log /tmp/status.txt .
+          git add android-build.log status.txt
+          git commit -m "Android build log, run ${GITHUB_RUN_NUMBER} (${{ job.status }})"
+          git push origin ci-logs
