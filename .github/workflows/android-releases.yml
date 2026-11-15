@@ -22,6 +22,26 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Informational: the SHA-256 of the packages the app downloads, from
+      # both the http and the https servers. The app refuses packages whose
+      # checksum differs from the ones built in (app/SDL/TSDLApp.cpp).
+      - name: Package checksums
+        continue-on-error: true
+        run: |
+          for p in SystemPatches/english/2x00/mp717260.pkg SystemPatches/german/2x00/mp747260.pkg \
+                   SystemPatches/english/eMate/EM737246.PKG Internet/NIE2/REGPKGS/inetenbl.pkg \
+                   Internet/NIE2/REGPKGS/inetstup.pkg Internet/NIE2/ENETSUP/newtdev.pkg \
+                   Internet/NIE2/ENETSUP/enetsup.pkg; do
+            for base in http://www.unna.org/unna/apple/software https://web.mit.edu/unna/apple/software; do
+              f=$(curl -fsSL --max-time 60 "$base/$p" | sha256sum | cut -c1-64)
+              echo "CHECKSUM $f $base/$p"
+            done
+          done
+          for u in http://www.kallisys.com/files/newton/ATA/ATA-Support-1.0.pkg \
+                   https://www.kallisys.com/files/newton/ATA/ATA-Support-1.0.pkg; do
+            echo "CHECKSUM $(curl -fsSL --max-time 60 "$u" | sha256sum | cut -c1-64) $u"
+          done
+
       - name: Download prebuilt SDL3 for Android
         env:
           GH_TOKEN: ${{ github.token }}
