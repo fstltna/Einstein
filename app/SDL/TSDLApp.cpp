@@ -940,13 +940,16 @@ void TSDLApp::HandleKey(const SDL_KeyboardEvent& inEvent)
 	if (scancode >= mScancodesDown.size()) return;
 	if (inEvent.down) {
 		if (inEvent.repeat && mScancodesDown.test(scancode)) {
-			// Auto-repeat of a held key, as the Cocoa app sends it. Modifier
-			// keys (Command, Shift, Caps Lock, Option, Control: codes 55 to
-			// 59) don't repeat on a Newton keyboard; NewtonOS shows its
-			// Command key list while Command is held, and repeats made it
-			// flicker.
-			if (code < 55 || code > 59)
+			// Auto-repeat of a held key, as the Cocoa app sends it. For the
+			// modifier keys (Command, Shift, Caps Lock, Option, Control: codes
+			// 55 to 59) only the first repeat goes to NewtonOS: a repeat of
+			// Command opens its Command key list, and every further repeat
+			// at the host's rate reopened it (flicker).
+			bool modifier = (code >= 55 && code <= 59);
+			if (!modifier || !mModifierRepeated.test(scancode)) {
+				mModifierRepeated.set(scancode);
 				mScreenManager->KeyRepeat((KUInt8) code);
+			}
 			return;
 		}
 		if (!mScancodesDown.test(scancode)) {
@@ -956,6 +959,7 @@ void TSDLApp::HandleKey(const SDL_KeyboardEvent& inEvent)
 		mScreenManager->KeyDown((KUInt8) code);
 	} else if (mScancodesDown.test(scancode)) {
 		mScancodesDown.reset(scancode);
+		mModifierRepeated.reset(scancode);
 		if (mKeyHolders[code] > 0 && --mKeyHolders[code] == 0)
 			mScreenManager->KeyUp((KUInt8) code);
 	}
@@ -973,6 +977,7 @@ void TSDLApp::ReleaseKeys()
 		mKeyHolders[code] = 0;
 	}
 	mScancodesDown.reset();
+	mModifierRepeated.reset();
 }
 
 SDL_AppResult TSDLApp::Run()
