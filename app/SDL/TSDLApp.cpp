@@ -940,8 +940,13 @@ void TSDLApp::HandleKey(const SDL_KeyboardEvent& inEvent)
 	if (scancode >= mScancodesDown.size()) return;
 	if (inEvent.down) {
 		if (inEvent.repeat && mScancodesDown.test(scancode)) {
-			// Auto-repeat of a held key, as the Cocoa app sends it.
-			mScreenManager->KeyRepeat((KUInt8) code);
+			// Auto-repeat of a held key, as the Cocoa app sends it. Modifier
+			// keys (Command, Shift, Caps Lock, Option, Control: codes 55 to
+			// 59) don't repeat on a Newton keyboard; NewtonOS shows its
+			// Command key list while Command is held, and repeats made it
+			// flicker.
+			if (code < 55 || code > 59)
+				mScreenManager->KeyRepeat((KUInt8) code);
 			return;
 		}
 		if (!mScancodesDown.test(scancode)) {
